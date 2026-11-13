@@ -1,0 +1,13 @@
+{
+  "hooks": {
+    "Stop": [
+      { "hooks": [ { "type": "command", "command": "$HOME/.claude/claude-fart-ping/play.sh stop" } ] }
+    ],
+    "Notification": [
+      { "hooks": [ { "type": "command", "command": "$HOME/.claude/claude-fart-ping/play.sh notification" } ] }
+    ],
+    "PermissionRequest": [
+      { "hooks": [ { "type": "command", "command": "$HOME/.claude/claude-fart-ping/play.sh permission" } ] }
+    ]
+  }
+}
