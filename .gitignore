@@ -2,3 +2,7 @@
 _mixkit-unused/
 .DS_Store
 *.bak-fart
+
+# local state/config
+config.json
+.state/

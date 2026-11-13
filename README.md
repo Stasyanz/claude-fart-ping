@@ -17,7 +17,7 @@ Covers **all of Claude Code's hook events** (see [`events.tsv`](events.tsv)), gr
 | `misc` | `ConfigChange`, `DirectoryAdded`, `PreModelSwitch`, `PostModelSwitch`, … |
 | `tool` | `PreToolUse`, `PostToolUse`, `PostToolBatch`, `MessageDisplay` (noisy, opt-in) |
 
-A random file from `sounds/<category>/` is played each time. A category without its own sounds (everything except `stop`, `notification`, `permission` for now) plays a random clip from any folder.
+A random clip from `packs/<pack>/<category>/` is played each time, never the same one twice in a row. A category without its own sounds (everything except `stop`, `notification`, `permission` for now) plays a random clip from the pack.
 
 ## Install
 
@@ -47,12 +47,49 @@ Prefer to look first? `git clone https://github.com/Stasyanz/claude-fart-ping &&
 ~/.claude/claude-fart-ping/uninstall.sh --purge
 ```
 
-Removes only the claude-fart-ping hooks; `--purge` also deletes the folder.
+Removes only the claude-fart-ping hooks and the `fart` link; `--purge` also deletes the folder.
 
-## Configure
+## Control it: the `fart` command
 
-- **Volume:** `FART_VOLUME=1.0` (0.0–1.0, default 0.7). Set it in the `env` section of `settings.json`.
-- **Your own sounds:** drop `.wav`, `.mp3`, `.m4a` or `.aiff` files into `sounds/<category>/` (create the folder for categories that don't have one yet). Short clips (< 3 s) work best.
+The installer links `fart` into `~/.local/bin` (if that folder exists; otherwise use `~/.claude/claude-fart-ping/fart.sh`).
+
+```bash
+fart status                    # current settings
+fart toggle                    # mute / unmute everything (also: fart on, fart off)
+fart volume 0.4                # 0.0-1.0
+fart category error off        # mute one category (stop, error, spam, ...)
+fart packs                     # list sound packs
+fart use <pack>                # switch pack
+fart rotate default,other      # random pack on every play (fart rotate off)
+fart annoyed 3 10              # 3+ prompts within 10 s -> "annoyed" sound (0 = off)
+fart test stop                 # play a sound now
+```
+
+Settings live in `config.json` next to the scripts (defaults in `config.default.json`). `FART_VOLUME=0.9` in the environment overrides the volume.
+
+**Annoyed mode:** send prompts too fast (default: 3 within 10 s) and the `prompt` hook plays the `spam` category instead (falls back to `stop` clips until you add `packs/<pack>/spam/`).
+
+### Notifications
+
+Off by default. Texts are fixed (“Claude finished”, “Claude needs your permission”, …): no project names, prompts or file paths leave your machine.
+
+```bash
+fart notify desktop on                      # macOS / notify-send
+fart notify ntfy my-secret-topic            # https://ntfy.sh (or: ... my-topic https://my.server)
+fart notify telegram <bot_token> <chat_id>
+fart notify pushover <user_key> <app_token>
+fart notify categories stop,permission      # default: stop,notification,permission,error
+fart notify off
+```
+
+Push tokens are stored in `config.json` (chmod 600, git-ignored) and passed to `curl` through stdin, not on the command line.
+
+### Sound packs
+
+A pack is just a folder: `packs/<name>/<category>/*.mp3` (also `.wav`, `.m4a`, `.aiff`). Create `packs/mypack/stop/`, drop clips in, run `fart use mypack`. Short clips (< 3 s) work best.
+
+### Other
+
 - **Which events:** edit [`events.tsv`](events.tsv) (`y` default, `n` only with `--all`, `x` never) and re-run `./install.sh`.
 - **Manual setup:** see `hooks.example.json`.
 - **Safe on every event:** `play.sh` always exits 0 and prints nothing, so it can't block Claude or leak text into its context (some events feed stdout to Claude).
@@ -61,7 +98,7 @@ Using [peon-ping](https://github.com/PeonPing/peon-ping) too? Both will play on 
 
 ## Sounds
 
-The clips in `sounds/` are cut from the YouTube video "Epic Fart #2 - Director's Cut (No Talking)"
+The clips in `packs/default/` are cut from the YouTube video "Epic Fart #2 - Director's Cut (No Talking)"
 
 ## Development
 
@@ -69,7 +106,7 @@ The clips in `sounds/` are cut from the YouTube video "Epic Fart #2 - Director's
 bash tests/test.sh
 ```
 
-Tests run against a temporary config directory and never touch your real `settings.json`.
+75 checks (engine, config, packs, notifications, CLI, installer). They use a temp directory with fake `afplay`/`curl`/`osascript`: silent, offline, and your real `settings.json` and `~/.local/bin` are never touched.
 
 ## License
 

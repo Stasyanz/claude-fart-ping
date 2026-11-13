@@ -29,7 +29,7 @@ else
     git clone --depth 1 --quiet "$REPO_URL" "$DEST"
   fi
 fi
-chmod +x "$DEST/play.sh"
+chmod +x "$DEST/play.sh" "$DEST/fart.sh"
 
 if ! command -v afplay >/dev/null 2>&1 && ! command -v mpv >/dev/null 2>&1 \
    && ! command -v ffplay >/dev/null 2>&1 && ! command -v mpg123 >/dev/null 2>&1 \
@@ -60,5 +60,15 @@ mv "$tmp" "$SETTINGS"
 
 echo "claude-fart-ping installed in $DEST"
 echo "$(echo "$evs" | jq length) events hooked ($MODE) in $SETTINGS (backup: $SETTINGS.bak-fart)"
+
+# `fart` command (toggle, volume, packs, notifications...): symlink into ~/.local/bin if it exists
+BIN_DIR="${FART_BIN_DIR:-$HOME/.local/bin}"
+if [ -d "$BIN_DIR" ] && [ ! -e "$BIN_DIR/fart" -o -L "$BIN_DIR/fart" ]; then
+  ln -sf "$DEST/fart.sh" "$BIN_DIR/fart"
+  echo "command: fart (try: fart status)"
+  case ":$PATH:" in *":$BIN_DIR:"*) ;; *) echo "note: $BIN_DIR is not in your PATH" ;; esac
+else
+  echo "command: no ~/.local/bin to link into; use: $DEST/fart.sh status  (or alias fart=$DEST/fart.sh)"
+fi
 echo "Restart Claude Code (or run /hooks) to activate."
 [ -n "${FART_NO_SOUND:-}" ] || "$DEST/play.sh" stop </dev/null || true

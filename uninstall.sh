@@ -22,6 +22,12 @@ if [ -f "$SETTINGS" ]; then
   echo "hooks removed from $SETTINGS (backup: $SETTINGS.bak-fart)"
 fi
 
+BIN_DIR="${FART_BIN_DIR:-$HOME/.local/bin}"
+self="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -L "$BIN_DIR/fart" ] && [ "$(readlink "$BIN_DIR/fart")" = "$self/fart.sh" ]; then
+  rm -f "$BIN_DIR/fart"; echo "removed $BIN_DIR/fart"
+fi
+
 if [ "${1:-}" = "--purge" ]; then
   rm -rf "$CLAUDE_DIR/claude-fart-ping"
   echo "deleted $CLAUDE_DIR/claude-fart-ping"
