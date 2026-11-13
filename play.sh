@@ -1,21 +1,27 @@
 #!/bin/bash
-# Usage: play.sh <category>   (stop | notification | permission)
+# Usage: play.sh <category>
 # Plays a random sound from sounds/<category>/ in the background.
+# If that folder has no sounds, falls back to a random sound from any folder.
 # Env: FART_VOLUME (0.0-1.0, default 0.7)
+# Always exits 0 and prints nothing, so it is safe on every hook event
+# (stdout of some events, e.g. SessionStart, is fed to Claude as context).
 
 category="${1:-}"
 [ -z "$category" ] && exit 0
 
 root="$(cd "$(dirname "$0")" && pwd)"
-dir="$root/sounds/$category"
 volume="${FART_VOLUME:-0.7}"
 
 # Claude Code passes hook JSON on stdin; we don't need it, but drain it.
 cat >/dev/null 2>&1 || true
 
-[ -d "$dir" ] || exit 0
+pick() {
+  find "$1" -type f \( -iname '*.wav' -o -iname '*.mp3' -o -iname '*.m4a' -o -iname '*.aiff' \) 2>/dev/null | sort -R | head -1
+}
 
-file=$(find "$dir" -maxdepth 1 -type f \( -iname '*.wav' -o -iname '*.mp3' -o -iname '*.m4a' -o -iname '*.aiff' \) | sort -R | head -1)
+file=""
+case "$category" in */*|.*) ;; *) [ -d "$root/sounds/$category" ] && file=$(pick "$root/sounds/$category") ;; esac
+[ -n "$file" ] || file=$(pick "$root/sounds")
 [ -n "$file" ] || exit 0
 
 play() {

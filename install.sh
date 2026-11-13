@@ -1,5 +1,7 @@
 #!/bin/bash
 # claude-fart-ping installer.
+#   install.sh          26 events (all except the noisy per-tool ones)
+#   install.sh --all    every supported event (can be very noisy)
 #   curl -fsSL https://raw.githubusercontent.com/Stasyanz/claude-fart-ping/main/install.sh | bash
 # or from a clone: ./install.sh
 set -euo pipefail
@@ -7,7 +9,8 @@ set -euo pipefail
 REPO_URL="https://github.com/Stasyanz/claude-fart-ping.git"
 CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 SETTINGS="$CLAUDE_DIR/settings.json"
-MARKER="claude-fart-ping/play.sh"
+MODE=default
+[ "${1:-}" = "--all" ] && MODE=all
 
 die() { echo "error: $*" >&2; exit 1; }
 
@@ -39,22 +42,23 @@ mkdir -p "$CLAUDE_DIR"
 jq empty "$SETTINGS" 2>/dev/null || die "$SETTINGS is not valid JSON, not touching it"
 cp "$SETTINGS" "$SETTINGS.bak-fart"
 
-# Idempotent: drop our old entries, then append fresh ones.
+# Events to hook, from events.tsv (y = default, n = only with --all, x = never)
+evs="$(awk -v m="$MODE" '!/^#/ && NF >= 3 && ($3 == "y" || (m == "all" && $3 == "n")) { print $1 " " $2 }' "$DEST/events.tsv" \
+  | jq -R 'split(" ") | {event: .[0], cat: .[1]}' | jq -s .)"
+
+# Idempotent: strip our old entries from every event, then add fresh ones.
 tmp="$(mktemp)"
-jq --arg dest "$DEST" --arg marker "$MARKER" '
-  def ours: (.hooks // []) | any(.[]; (.command // "") | contains($marker));
-  def add(event; cat):
-    .hooks[event] = ((.hooks[event] // []) | map(select(ours | not)))
-    + [{"matcher":"","hooks":[{"type":"command","command":($dest + "/play.sh " + cat),"timeout":10,"async":true}]}];
-  .hooks = (.hooks // {})
-  | add("Stop"; "stop")
-  | add("Notification"; "notification")
-  | add("PermissionRequest"; "permission")
+jq --arg dest "$DEST" --argjson evs "$evs" '
+  def ours: (.hooks // []) | any(.[]; (.command // "") | (contains("FART_PING=1") or contains("claude-fart-ping/play.sh")));
+  .hooks = ((.hooks // {}) | with_entries(.value |= map(select(ours | not))))
+  | reduce $evs[] as $e (.;
+      .hooks[$e.event] = ((.hooks[$e.event] // []) + [{"hooks":[{"type":"command","command":("FART_PING=1 " + $dest + "/play.sh " + $e.cat),"timeout":10,"async":true}]}]))
+  | .hooks |= with_entries(select(.value | length > 0))
 ' "$SETTINGS" > "$tmp"
 jq empty "$tmp" || { rm -f "$tmp"; die "generated settings are invalid, aborting"; }
 mv "$tmp" "$SETTINGS"
 
 echo "claude-fart-ping installed in $DEST"
-echo "hooks added to $SETTINGS (backup: $SETTINGS.bak-fart)"
+echo "$(echo "$evs" | jq length) events hooked ($MODE) in $SETTINGS (backup: $SETTINGS.bak-fart)"
 echo "Restart Claude Code (or run /hooks) to activate."
 [ -n "${FART_NO_SOUND:-}" ] || "$DEST/play.sh" stop </dev/null || true
