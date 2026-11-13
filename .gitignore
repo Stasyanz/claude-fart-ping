@@ -6,3 +6,4 @@ _mixkit-unused/
 # local state/config
 config.json
 .state/
+events.local.tsv

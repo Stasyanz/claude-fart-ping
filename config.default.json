@@ -8,9 +8,24 @@
   "annoyed_window_seconds": 10,
   "notifications": {
     "desktop": false,
-    "categories": ["stop", "notification", "permission", "error"],
-    "ntfy": { "topic": "", "server": "https://ntfy.sh" },
-    "telegram": { "token": "", "chat_id": "" },
-    "pushover": { "user": "", "token": "" }
+    "categories": [
+      "stop",
+      "notification",
+      "permission",
+      "error"
+    ],
+    "ntfy": {
+      "topic": "",
+      "server": "https://ntfy.sh"
+    },
+    "telegram": {
+      "token": "",
+      "chat_id": ""
+    },
+    "pushover": {
+      "user": "",
+      "token": ""
+    },
+    "min_interval_seconds": 15
   }
 }

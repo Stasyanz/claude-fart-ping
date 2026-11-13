@@ -1,8 +1,10 @@
 # event category enabled   (y = default, n = only with --all, x = never)
+# x: FileChanged needs explicit file names; WorktreeCreate/WorktreeRemove REPLACE git's worktree
+#    handling (the hook must print the worktree path), so a sound hook would break `claude --worktree`.
 SessionStart start y
 Setup start y
 UserPromptSubmit prompt y
-UserPromptExpansion prompt y
+UserPromptExpansion prompt n
 PreToolUse tool n
 PermissionRequest permission y
 PermissionDenied permission y
@@ -23,8 +25,8 @@ ConfigChange misc y
 CwdChanged misc n
 DirectoryAdded misc y
 FileChanged misc x
-WorktreeCreate start y
-WorktreeRemove end y
+WorktreeCreate start x
+WorktreeRemove end x
 PreCompact compact y
 PostCompact compact y
 PreModelSwitch misc y

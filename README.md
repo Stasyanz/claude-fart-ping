@@ -27,15 +27,15 @@ curl -fsSL https://raw.githubusercontent.com/Stasyanz/claude-fart-ping/main/inst
 
 Then restart Claude Code (or run `/hooks`). That's it.
 
-The installer clones the repo to `~/.claude/claude-fart-ping`, adds hooks to `~/.claude/settings.json` (backup saved as `settings.json.bak-fart`), and plays a test sound. It's safe to re-run: no duplicate hooks, your other hooks and settings are untouched.
+The installer clones the repo to `~/.claude/claude-fart-ping`, adds hooks to `~/.claude/settings.json`, and plays a test sound. A backup of your settings from *before the first install* is kept as `settings.json.bak-fart` (later runs never overwrite it). It's safe to re-run: no duplicate hooks, your other hooks and settings are untouched, and a symlinked `settings.json` (dotfiles managers) stays a symlink. If `settings.json` is invalid or has an unexpected shape, the installer refuses to touch it.
 
-By default it hooks 26 events and skips the six that fire constantly (`PreToolUse`, `PostToolUse`, `PostToolBatch`, `MessageDisplay`, `CwdChanged`, `InstructionsLoaded`) — Claude makes dozens of tool calls per reply, so you would get dozens of farts. Want everything anyway?
+By default it hooks 23 events and skips the seven that fire constantly (`PreToolUse`, `PostToolUse`, `PostToolBatch`, `MessageDisplay`, `UserPromptExpansion`, `CwdChanged`, `InstructionsLoaded`) — Claude makes dozens of tool calls per reply, so you would get dozens of farts. Want everything anyway?
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Stasyanz/claude-fart-ping/main/install.sh | bash -s -- --all
 ```
 
-(`FileChanged` is never hooked: it needs explicit file names.) Re-running the installer with or without `--all` switches between the modes.
+Never hooked, even with `--all`: `FileChanged` (needs explicit file names) and `WorktreeCreate` / `WorktreeRemove` — those hooks *replace* Claude Code's own worktree handling and must print the worktree path, so a sound hook there breaks `claude --worktree`, worktree-isolated subagents and workflows. Re-running the installer with or without `--all` switches between the modes.
 
 **Requirements:** `jq`, `git`, and an audio player — `afplay` on macOS (built in); on Linux one of `mpv`, `ffplay`, `mpg123`, `paplay`.
 
@@ -71,7 +71,7 @@ Settings live in `config.json` next to the scripts (defaults in `config.default.
 
 ### Notifications
 
-Off by default. Texts are fixed (“Claude finished”, “Claude needs your permission”, …): no project names, prompts or file paths leave your machine.
+Off by default. Sent only for `Stop` (“Claude finished”), `Notification` / `PermissionRequest` (“waiting for you” / “needs your permission”) and `StopFailure` (“Something failed”), at most one per 15 s per kind (`notifications.min_interval_seconds`), so subagents and double events do not flood your phone. Texts are fixed: no project names, prompts or file paths leave your machine.
 
 ```bash
 fart notify desktop on                      # macOS / notify-send
@@ -82,7 +82,7 @@ fart notify categories stop,permission      # default: stop,notification,permiss
 fart notify off
 ```
 
-Push tokens are stored in `config.json` (chmod 600, git-ignored) and passed to `curl` through stdin, not on the command line.
+Tokens and the ntfy topic (it acts as a password) are stored in `config.json` (chmod 600, git-ignored) and passed to `curl` through stdin, not on the command line. Values are validated before use, so a hand-edited `config.json` cannot inject curl options. Use an `https://` ntfy server: with `http://` the topic travels unencrypted.
 
 ### Sound packs
 
@@ -90,7 +90,7 @@ A pack is just a folder: `packs/<name>/<category>/*.mp3` (also `.wav`, `.m4a`, `
 
 ### Other
 
-- **Which events:** edit [`events.tsv`](events.tsv) (`y` default, `n` only with `--all`, `x` never) and re-run `./install.sh`.
+- **Which events:** put overrides in `events.local.tsv` (same format as [`events.tsv`](events.tsv): `Event category y|n|x`; untracked, survives updates) and re-run the installer. Don't edit `events.tsv` itself: it would block `git pull` on update.
 - **Manual setup:** see `hooks.example.json`.
 - **Safe on every event:** `play.sh` always exits 0 and prints nothing, so it can't block Claude or leak text into its context (some events feed stdout to Claude).
 
@@ -98,7 +98,7 @@ Using [peon-ping](https://github.com/PeonPing/peon-ping) too? Both will play on 
 
 ## Sounds
 
-The clips in `packs/default/` are cut from the YouTube video "Epic Fart #2 - Director's Cut (No Talking)"
+The clips in `packs/default/` are cut from the YouTube video ["Epic Fart #2 - Director's Cut (No Talking)"](https://www.youtube.com/watch?v=PLeAKQg-JPY) by iFart. They are not mine and are **not covered by the MIT license**; all rights stay with the original author. If you are the rights holder and want them removed, open an issue and they will be gone. Prefer to be safe? Replace them with your own or CC0 clips (see "Sound packs" above).
 
 ## Development
 
@@ -106,8 +106,8 @@ The clips in `packs/default/` are cut from the YouTube video "Epic Fart #2 - Dir
 bash tests/test.sh
 ```
 
-75 checks (engine, config, packs, notifications, CLI, installer). They use a temp directory with fake `afplay`/`curl`/`osascript`: silent, offline, and your real `settings.json` and `~/.local/bin` are never touched.
+Covers the engine, config, packs, notifications (incl. injection attempts), the CLI and the installer (shared hook groups, symlinked settings, paths with spaces, `curl | bash` via a local repo). They use a temp directory with fake `afplay`/`curl`/`osascript`: silent, offline, and your real `settings.json` and `~/.local/bin` are never touched.
 
 ## License
 
-Code: MIT. Sounds: see above.
+Code: MIT (see `LICENSE`). Sounds in `packs/`: not MIT, see "Sounds" above.
