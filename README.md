@@ -98,7 +98,7 @@ Using [peon-ping](https://github.com/PeonPing/peon-ping) too? Both will play on 
 
 ## Sounds
 
-The clips in `packs/default/` are cut from the YouTube video ["Epic Fart #2 - Director's Cut (No Talking)"](https://www.youtube.com/watch?v=PLeAKQg-JPY) by iFart. They are not mine and are **not covered by the MIT license**; all rights stay with the original author. If you are the rights holder and want them removed, open an issue and they will be gone. Prefer to be safe? Replace them with your own or CC0 clips (see "Sound packs" above).
+The clips in `packs/default/` are cut from the YouTube video ["Epic Fart #2 - Director's Cut (No Talking)"](https://www.youtube.com/watch?v=PLeAKQg-JPY) by iFart. They are not mine and are **not covered by the MIT license**; You can replace them with your own or CC0 clips (see "Sound packs" above).
 
 ## Development
 
